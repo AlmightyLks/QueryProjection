@@ -41,10 +41,10 @@ public class EFCoreTests : IDisposable
     [Fact]
     public void CanProject_OneLayer_Successfully()
     {
-        var fromToMapping = new Dictionary<string, string>()
+        var fromToMapping = new List<IMapping<Person>>()
         {
-            ["FavSnack"] = "FavouriteSnack",
-            ["FavAnimal"] = "FavouriteAnimal"
+            new FromToMapping<Person>() { To = "FavSnack", From = "FavouriteSnack" },
+            new FromToMapping<Person>() { To = "FavAnimal", From = "FavouriteAnimal" }
         };
 
         var query = _context.People.Project(fromToMapping);
@@ -69,9 +69,9 @@ public class EFCoreTests : IDisposable
     [Fact]
     public void CanProject_TwoLayers_Successfully()
     {
-        var fromToMapping = new Dictionary<string, string>()
+        var fromToMapping = new List<IMapping<Person>>()
         {
-            ["FirstName"] = "IdCard.FirstName"
+            new FromToMapping<Person>() { To = "FirstName" , From = "IdCard.FirstName" }
         };
 
         var query = _context.People.Project(fromToMapping);
