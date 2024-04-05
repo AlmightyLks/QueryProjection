@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -45,7 +46,7 @@ public static class QueryProjectionExtension
         foreach (var fromToMapping in mappings)
         {
             var anonPropertyName = fromToMapping.To;
-            var anonPropertyType = FilterExpressionProvider.NestedProperty(xParameter, fromToMapping.From.Split('.')).Type;
+            var anonPropertyType = fromToMapping.GetResultType(xParameter);
             objectProperties.Add(anonPropertyName, anonPropertyType);
         }
         var anonType = AnonymousTypeGenerator.FindOrCreateAnonymousType(objectProperties);
@@ -56,29 +57,60 @@ public static class QueryProjectionExtension
 
 public interface IMapping<T>
 {
-    string From { get; set; }
     string To { get; set; }
+    Type GetResultType(ParameterExpression xParameter);
     MemberAssignment BuildMemberAssignment(FieldInfo fieldInfo, ParameterExpression xParameter);
 }
 
 public struct FromToMapping<T> : IMapping<T>
 {
-    public string From { get; set; }
-    public string To { get; set; }
+    public required string From { get; set; }
+    public required string To { get; set; }
+
+    [SetsRequiredMembers]
+    public FromToMapping(string to, string from)
+    {
+        To = to;
+        From = from;
+    }
+
+    public Type GetResultType(ParameterExpression xParameter)
+    {
+        return Map(xParameter).Type;
+    }
 
     public MemberAssignment BuildMemberAssignment(FieldInfo fieldInfo, ParameterExpression xParameter)
     {
-        return Expression.Bind(fieldInfo, FilterExpressionProvider.NestedProperty(xParameter, From.Split('.')));
+        var memberExpression = Map(xParameter);
+        return Expression.Bind(fieldInfo, memberExpression);
+    }
+
+    private MemberExpression Map(ParameterExpression xParameter)
+    {
+        return FilterExpressionProvider.NestedProperty(xParameter, From.Split('.'));
     }
 }
 
-public struct CustomMapping<T> : IMapping<T>
+
+public struct CustomMapping<TInput, TOutput> : IMapping<TInput>
 {
-    public string From { get; set; }
-    public string To { get; set; }
+    public required string To { get; set; }
+    private Expression<Func<TInput, TOutput>> _fromExpression;
+
+    [SetsRequiredMembers]
+    public CustomMapping(string to, Expression<Func<TInput, TOutput>> fromExpression)
+    {
+        To = to;
+        _fromExpression = fromExpression;
+    }
+
+    public Type GetResultType(ParameterExpression xParameter)
+    {
+        return typeof(TOutput);
+    }
 
     public MemberAssignment BuildMemberAssignment(FieldInfo fieldInfo, ParameterExpression xParameter)
     {
-        throw new NotImplementedException();
+        return Expression.Bind(fieldInfo, _fromExpression.Body);
     }
 }

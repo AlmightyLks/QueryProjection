@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace QueryProjection.Tests;
@@ -43,8 +44,9 @@ public class EFCoreTests : IDisposable
     {
         var fromToMapping = new List<IMapping<Person>>()
         {
-            new FromToMapping<Person>() { To = "FavSnack", From = "FavouriteSnack" },
-            new FromToMapping<Person>() { To = "FavAnimal", From = "FavouriteAnimal" }
+            new FromToMapping<Person>(to: "FavSnack", from: "FavouriteSnack"),
+            //new CustomMapping<Person>(to: "FavAnimal", fromExpression: (x) => x.FavouriteAnimal)
+            new CustomMapping<Person, string>(to: "Name", x => x.FavouriteAnimal + " Lmao"),
         };
 
         var query = _context.People.Project(fromToMapping);
