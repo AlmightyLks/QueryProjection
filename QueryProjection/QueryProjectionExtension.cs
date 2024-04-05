@@ -87,7 +87,11 @@ public struct FromToMapping<T> : IMapping<T>
 
     private MemberExpression Map(ParameterExpression xParameter)
     {
-        return FilterExpressionProvider.NestedProperty(xParameter, From.Split('.'));
+        return NestedProperty(xParameter, From.Split('.'));
+    }
+    private static MemberExpression NestedProperty(Expression propertyHolder, string[] propertyPath)
+    {
+        return (MemberExpression)propertyPath.Aggregate(propertyHolder, Expression.Property);
     }
 }
 
@@ -95,6 +99,7 @@ public struct FromToMapping<T> : IMapping<T>
 public struct CustomMapping<TInput, TOutput> : IMapping<TInput>
 {
     public required string To { get; set; }
+
     private Expression<Func<TInput, TOutput>> _fromExpression;
 
     [SetsRequiredMembers]
