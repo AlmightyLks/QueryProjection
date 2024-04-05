@@ -1,13 +1,14 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using QueryProjection;
 
 BenchmarkRunner.Run<Benchmark>();
 
-[ShortRunJob]
 [MemoryDiagnoser]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+[CategoriesColumn]
 public class Benchmark
 {
     private AppContext Context = null!;
@@ -15,9 +16,7 @@ public class Benchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
-        var options = new DbContextOptionsBuilder<AppContext>().UseSqlite(connection).Options;
+        var options = new DbContextOptionsBuilder<AppContext>().UseInMemoryDatabase("QueryProjection").Options;
         Context = new AppContext(options);
         Context.Database.EnsureCreated();
 
@@ -55,28 +54,32 @@ public class Benchmark
             new FromToMapping<Person>() { From = "IdCard.FirstName", To = "FirstName" }
         ];
 
-    [Benchmark]
-    public object QueryWithProjection_OneLayer()
-    {
-        return Context.People.Project(MappingsOneLayer).ToList();
-    }
-
-    [Benchmark]
+    [Benchmark(Baseline = true)]
+    [BenchmarkCategory("OneLayer")]
     public object QueryWithSelect_OneLayer()
     {
         return Context.People.Select(x => new { FavAnimal = x.FavouriteAnimal }).ToList();
     }
 
     [Benchmark]
-    public object QueryWithProjection_TwoLayers()
+    [BenchmarkCategory("OneLayer")]
+    public object QueryWithProjection_OneLayer()
     {
-        return Context.People.Project(MappingsTwoLayers).ToList();
+        return Context.People.Project(MappingsOneLayer).ToList();
     }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
+    [BenchmarkCategory("TwoLayers")]
     public object QueryWithSelect_TwoLayers()
     {
         return Context.People.Select(x => new { FirstName = x.IdCard.FirstName }).ToList();
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("TwoLayers")]
+    public object QueryWithProjection_TwoLayers()
+    {
+        return Context.People.Project(MappingsTwoLayers).ToList();
     }
 }
 

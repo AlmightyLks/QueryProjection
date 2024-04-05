@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryProjection", "QueryPro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryProjection.Tests", "QueryProjection.Tests\QueryProjection.Tests.csproj", "{9C113267-E672-486E-82E3-45185AC96B8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueryProjection.SpeedTest", "QueryProjection.SpeedTest\QueryProjection.SpeedTest.csproj", "{A825DA8E-D763-467E-8F7E-CC7A04B19C73}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryProjection.SpeedTest", "QueryProjection.SpeedTest\QueryProjection.SpeedTest.csproj", "{A825DA8E-D763-467E-8F7E-CC7A04B19C73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
