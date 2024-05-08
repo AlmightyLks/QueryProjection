@@ -1,7 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Globalization;
-using System.Linq.Expressions;
-using System.Reflection;
+﻿using System.Linq.Expressions;
 
 namespace QueryProjection;
 

@@ -1,7 +1,4 @@
-using System.Linq.Expressions;
-using System.Numerics;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 
 namespace QueryProjection.Tests;
 
@@ -49,12 +46,6 @@ public class EFCoreTests : IDisposable
             new FromToMapping<Person>(to: "FavSnack", from: "FavouriteSnack"),
             new CustomMapping<Person, bool>(to: "HasLionAsAnimal", x => x.FavouriteAnimal.Contains(FavouriteAnimal))
         };
-
-        var anotherQuery = _context.People.Select(x => new
-        {
-            FavSnack = x.FavouriteSnack,
-            FavAnimal = x.FavouriteAnimal + " Lmao"
-        });
 
         var query = _context.People.Project(fromToMapping);
         var queryString = query.ToQueryString();
