@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
+using System.Numerics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace QueryProjection.Tests;
 
@@ -45,9 +47,14 @@ public class EFCoreTests : IDisposable
         var fromToMapping = new List<IMapping<Person>>()
         {
             new FromToMapping<Person>(to: "FavSnack", from: "FavouriteSnack"),
-            //new CustomMapping<Person>(to: "FavAnimal", fromExpression: (x) => x.FavouriteAnimal)
-            new CustomMapping<Person, string>(to: "Name", x => x.FavouriteAnimal + " Lmao"),
+            new CustomMapping<Person, string>(to: "FavAnimal", x => x.FavouriteAnimal + " Lmao"),
         };
+
+        var anotherQuery = _context.People.Select(x => new
+        {
+            FavSnack = x.FavouriteSnack,
+            FavAnimal = x.FavouriteAnimal + " Lmao"
+        });
 
         var query = _context.People.Project(fromToMapping);
         var queryString = query.ToQueryString();
@@ -65,7 +72,7 @@ public class EFCoreTests : IDisposable
 
         field = fields.FirstOrDefault(x => x.Name == "FavAnimal");
         Assert.NotNull(field);
-        Assert.Equal(FavouriteAnimal, field.GetValue(result));
+        Assert.Equal(FavouriteAnimal + " Lmao", field.GetValue(result));
     }
 
     [Fact]

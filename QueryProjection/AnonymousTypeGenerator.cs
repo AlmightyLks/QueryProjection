@@ -1,6 +1,8 @@
 ﻿using System.Reflection.Emit;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Reflection.Metadata;
+using Microsoft.VisualBasic.FileIO;
 
 namespace QueryProjection;
 
@@ -37,8 +39,24 @@ public static class AnonymousTypeGenerator
         foreach (var propertyName in propertyTypes.Keys)
             fieldBuilders.Add(typeBuilder.DefineField(propertyName, genericTypeParameterNameToBuilderMap[GenerateGenericTypeParameter(propertyName)], FieldAttributes.Public));
 
-        // Fix the generic class
         var fieldTypeList = propertyTypes.Values.ToArray();
+
+        // Define constructor
+        var constructor = typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, fieldTypeList);
+        var constructorIL = constructor.GetILGenerator();
+
+        // Generate IL to assign fields
+        for (int i = 0; i < fieldTypeList.Length; i++)
+        {
+            var field = fieldBuilders[i];
+
+            constructorIL.Emit(OpCodes.Ldarg_0);
+            constructorIL.Emit(OpCodes.Ldarg_S, i + 1);
+            constructorIL.Emit(OpCodes.Stfld, field);
+        }
+
+        constructorIL.Emit(OpCodes.Ret);
+
         return typeBuilder.CreateType().MakeGenericType(fieldTypeList);
 
         // Method to generate generic type parameter names

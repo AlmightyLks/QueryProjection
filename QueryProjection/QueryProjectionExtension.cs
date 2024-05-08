@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -24,17 +25,18 @@ public static class QueryProjectionExtension
 
         var anonType = GetAnonymousType(mappings, xParameter);
 
-        var memberAssignments = new List<MemberAssignment>();
+        var expressions = new List<Expression>();
         foreach (var fieldInfo in anonType.GetFields())
         {
-            var mapping = mappings.Find(x => x.To == fieldInfo.Name);
-            if (mapping is { })
+            if (mappings.Find(x => x.To == fieldInfo.Name) is { } mapping)
             {
-                memberAssignments.Add(mapping.BuildMemberAssignment(fieldInfo, xParameter));
+                expressions.Add(mapping.BuildExpression(xParameter));
             }
         }
 
-        var memberInitializations = Expression.MemberInit(Expression.New(anonType), memberAssignments);
+        var ctor = anonType.GetConstructors()[0];
+
+        var memberInitializations = Expression.New(ctor, expressions, anonType.GetFields());
         var funcExpression = Expression.Lambda<Func<T, object>>(memberInitializations, xParameter);
 
         return funcExpression;
@@ -59,7 +61,7 @@ public interface IMapping<T>
 {
     string To { get; set; }
     Type GetResultType(ParameterExpression xParameter);
-    MemberAssignment BuildMemberAssignment(FieldInfo fieldInfo, ParameterExpression xParameter);
+    Expression BuildExpression(ParameterExpression xParameter);
 }
 
 public struct FromToMapping<T> : IMapping<T>
@@ -76,16 +78,9 @@ public struct FromToMapping<T> : IMapping<T>
 
     public Type GetResultType(ParameterExpression xParameter)
     {
-        return Map(xParameter).Type;
+        return BuildExpression(xParameter).Type;
     }
-
-    public MemberAssignment BuildMemberAssignment(FieldInfo fieldInfo, ParameterExpression xParameter)
-    {
-        var memberExpression = Map(xParameter);
-        return Expression.Bind(fieldInfo, memberExpression);
-    }
-
-    private MemberExpression Map(ParameterExpression xParameter)
+    public Expression BuildExpression(ParameterExpression xParameter)
     {
         return NestedProperty(xParameter, From.Split('.'));
     }
@@ -105,17 +100,49 @@ public struct CustomMapping<TInput, TOutput> : IMapping<TInput>
     [SetsRequiredMembers]
     public CustomMapping(string to, Expression<Func<TInput, TOutput>> fromExpression)
     {
+        if (fromExpression is not LambdaExpression)
+            throw new ArgumentException($"{nameof(fromExpression)} may only be a LambdaExpression");
+
         To = to;
         _fromExpression = fromExpression;
     }
 
     public Type GetResultType(ParameterExpression xParameter)
     {
-        return typeof(TOutput);
+        return _fromExpression.Body.Type;
     }
 
-    public MemberAssignment BuildMemberAssignment(FieldInfo fieldInfo, ParameterExpression xParameter)
+    public Expression BuildExpression(ParameterExpression xParameter)
     {
-        return Expression.Bind(fieldInfo, _fromExpression.Body);
+        var exp = (LambdaExpression)ParameterRebinder.ReplaceParameters(new()
+        {
+            { _fromExpression.Parameters.First(), xParameter }
+        }, _fromExpression);
+
+        return exp.Body;
+    }
+    sealed class ParameterRebinder : ExpressionVisitor
+    {
+        readonly Dictionary<ParameterExpression, ParameterExpression> map;
+
+        ParameterRebinder(Dictionary<ParameterExpression, ParameterExpression> map)
+        {
+            this.map = map ?? [];
+        }
+
+        public static Expression ReplaceParameters(Dictionary<ParameterExpression, ParameterExpression> map, Expression exp)
+        {
+            return new ParameterRebinder(map).Visit(exp);
+        }
+
+        protected override Expression VisitParameter(ParameterExpression p)
+        {
+            if (map.TryGetValue(p, out ParameterExpression? replacement))
+            {
+                p = replacement;
+            }
+
+            return base.VisitParameter(p);
+        }
     }
 }
