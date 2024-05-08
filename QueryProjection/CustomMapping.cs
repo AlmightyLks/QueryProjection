@@ -10,13 +10,13 @@ public struct CustomMapping<TInput, TOutput> : IMapping<TInput>
     private Expression<Func<TInput, TOutput>> _fromExpression;
 
     [SetsRequiredMembers]
-    public CustomMapping(string to, Expression<Func<TInput, TOutput>> fromExpression)
+    public CustomMapping(string to, Expression<Func<TInput, TOutput>> from)
     {
-        if (fromExpression is not LambdaExpression)
-            throw new ArgumentException($"{nameof(fromExpression)} may only be a LambdaExpression");
+        if (from is not LambdaExpression)
+            throw new ArgumentException($"{nameof(from)} may only be a LambdaExpression");
 
         To = to;
-        _fromExpression = fromExpression;
+        _fromExpression = from;
     }
 
     public Type GetResultType(ParameterExpression xParameter)

@@ -44,7 +44,7 @@ public class EFCoreTests : IDisposable
         var fromToMapping = new List<IMapping<Person>>()
         {
             new FromToMapping<Person>(to: "FavSnack", from: "FavouriteSnack"),
-            new CustomMapping<Person, bool>(to: "HasLionAsAnimal", x => x.FavouriteAnimal.Contains(FavouriteAnimal))
+            new CustomMapping<Person, bool>(to: "HasLionAsAnimal", from: x => x.FavouriteAnimal.Contains(FavouriteAnimal))
         };
 
         var query = _context.People.Project(fromToMapping);
@@ -71,8 +71,8 @@ public class EFCoreTests : IDisposable
     {
         var fromToMapping = new List<IMapping<Person>>()
         {
-            new FromToMapping<Person>() { To = "FirstName" , From = "IdCard.FirstName" },
-            new CustomMapping<Person, bool>(to: "HasJohnOnIdCard", x => x.IdCard.FirstName.Contains(FirstName))
+            new FromToMapping<Person>(to: "FirstName" , from: "IdCard.FirstName"),
+            new CustomMapping<Person, bool>(to: "HasJohnOnIdCard", from: x => x.IdCard.FirstName.Contains(FirstName))
         };
 
         var query = _context.People.Project(fromToMapping);
