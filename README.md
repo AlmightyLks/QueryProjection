@@ -22,7 +22,7 @@ As you can see there is `IMapping<T>`. There is 2 structs implementing that inte
 `CustomMapping` allows you to specify a lambda expression, and acts as a Func<TInput, TOutput>. This allows to also include additional more complex ways to add fields to the result object.  
 
 ## Usage
-Create a list of mapping that you would like to use.  
+Create a list of mapping that you would like to apply.  
 For example simply a to-from mapping with two strings.  
 A to-from mapping where the from string is nested within the object.  
 Or a more complex to-from mapping where from is a Func.  
