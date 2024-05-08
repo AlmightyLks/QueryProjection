@@ -47,7 +47,7 @@ public class EFCoreTests : IDisposable
         var fromToMapping = new List<IMapping<Person>>()
         {
             new FromToMapping<Person>(to: "FavSnack", from: "FavouriteSnack"),
-            new CustomMapping<Person, string>(to: "FavAnimal", x => x.FavouriteAnimal + " Lmao"),
+            new CustomMapping<Person, bool>(to: "HasLionAsAnimal", x => x.FavouriteAnimal.Contains(FavouriteAnimal))
         };
 
         var anotherQuery = _context.People.Select(x => new
@@ -70,9 +70,9 @@ public class EFCoreTests : IDisposable
         Assert.NotNull(field);
         Assert.Equal(FavouriteSnack, field.GetValue(result));
 
-        field = fields.FirstOrDefault(x => x.Name == "FavAnimal");
+        field = fields.FirstOrDefault(x => x.Name == "HasLionAsAnimal");
         Assert.NotNull(field);
-        Assert.Equal(FavouriteAnimal + " Lmao", field.GetValue(result));
+        Assert.Equal(true, field.GetValue(result));
     }
 
     [Fact]
@@ -80,7 +80,8 @@ public class EFCoreTests : IDisposable
     {
         var fromToMapping = new List<IMapping<Person>>()
         {
-            new FromToMapping<Person>() { To = "FirstName" , From = "IdCard.FirstName" }
+            new FromToMapping<Person>() { To = "FirstName" , From = "IdCard.FirstName" },
+            new CustomMapping<Person, bool>(to: "HasJohnOnIdCard", x => x.IdCard.FirstName.Contains(FirstName))
         };
 
         var query = _context.People.Project(fromToMapping);
@@ -91,11 +92,15 @@ public class EFCoreTests : IDisposable
 
         var result = query.First();
         var fields = result.GetType().GetFields();
-        Assert.Single(fields);
+        Assert.Equal(2, fields.Length);
 
         var field = fields.FirstOrDefault(x => x.Name == "FirstName");
         Assert.NotNull(field);
         Assert.Equal(FirstName, field.GetValue(result));
+
+        field = fields.FirstOrDefault(x => x.Name == "HasJohnOnIdCard");
+        Assert.NotNull(field);
+        Assert.Equal(true, field.GetValue(result));
     }
 }
 
