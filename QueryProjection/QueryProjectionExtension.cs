@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -54,95 +53,5 @@ public static class QueryProjectionExtension
         var anonType = AnonymousTypeGenerator.FindOrCreateAnonymousType(objectProperties);
 
         return anonType;
-    }
-}
-
-public interface IMapping<T>
-{
-    string To { get; set; }
-    Type GetResultType(ParameterExpression xParameter);
-    Expression BuildExpression(ParameterExpression xParameter);
-}
-
-public struct FromToMapping<T> : IMapping<T>
-{
-    public required string From { get; set; }
-    public required string To { get; set; }
-
-    [SetsRequiredMembers]
-    public FromToMapping(string to, string from)
-    {
-        To = to;
-        From = from;
-    }
-
-    public Type GetResultType(ParameterExpression xParameter)
-    {
-        return BuildExpression(xParameter).Type;
-    }
-    public Expression BuildExpression(ParameterExpression xParameter)
-    {
-        return NestedProperty(xParameter, From.Split('.'));
-    }
-    private static MemberExpression NestedProperty(Expression propertyHolder, string[] propertyPath)
-    {
-        return (MemberExpression)propertyPath.Aggregate(propertyHolder, Expression.Property);
-    }
-}
-
-
-public struct CustomMapping<TInput, TOutput> : IMapping<TInput>
-{
-    public required string To { get; set; }
-
-    private Expression<Func<TInput, TOutput>> _fromExpression;
-
-    [SetsRequiredMembers]
-    public CustomMapping(string to, Expression<Func<TInput, TOutput>> fromExpression)
-    {
-        if (fromExpression is not LambdaExpression)
-            throw new ArgumentException($"{nameof(fromExpression)} may only be a LambdaExpression");
-
-        To = to;
-        _fromExpression = fromExpression;
-    }
-
-    public Type GetResultType(ParameterExpression xParameter)
-    {
-        return _fromExpression.Body.Type;
-    }
-
-    public Expression BuildExpression(ParameterExpression xParameter)
-    {
-        var exp = (LambdaExpression)ParameterRebinder.ReplaceParameters(new()
-        {
-            { _fromExpression.Parameters.First(), xParameter }
-        }, _fromExpression);
-
-        return exp.Body;
-    }
-    sealed class ParameterRebinder : ExpressionVisitor
-    {
-        readonly Dictionary<ParameterExpression, ParameterExpression> map;
-
-        ParameterRebinder(Dictionary<ParameterExpression, ParameterExpression> map)
-        {
-            this.map = map ?? [];
-        }
-
-        public static Expression ReplaceParameters(Dictionary<ParameterExpression, ParameterExpression> map, Expression exp)
-        {
-            return new ParameterRebinder(map).Visit(exp);
-        }
-
-        protected override Expression VisitParameter(ParameterExpression p)
-        {
-            if (map.TryGetValue(p, out ParameterExpression? replacement))
-            {
-                p = replacement;
-            }
-
-            return base.VisitParameter(p);
-        }
     }
 }
