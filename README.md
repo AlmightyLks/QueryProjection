@@ -3,8 +3,8 @@
 ---
 
 # Why was this library created?
-We needed a way to query only what was needed from the frontend, as our previous property filtering was done during json serialization, and resulted in unnecessarily long queries. However, we did not want to introduce something more time-consuming and complex like GraphQL.  
-library allows projecting upon an EFCore database query to only select what is being asked for, without statically typing out the properties, but also offering lambda expressions for specific use cases.
+We needed a way to query only what was needed from the frontend, as our previous property filtering was done during json serialization, and resulted in unnecessarily long queries and big result sets as well as long-running queries. However, we did not want to introduce something more time-consuming and complex like GraphQL.  
+This library allows projecting upon an EFCore database query to only select what is being asked for, without statically typing out the properties, but also offering lambda expressions for specific use cases.
 
 # How to use
 This library essentially offers 1 primary extension method which is the following:
