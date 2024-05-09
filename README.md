@@ -50,7 +50,7 @@ Thus:
 ```cs
 var query = _context.People.Project(fromToMapping);
 // Identical to
-var query = _ context.People.Select(x => new
+var query = _context.People.Select(x => new
 {
   PersonId = x.Id,
   FirstName = x.IdCard.FirstName,
